@@ -205,7 +205,7 @@ def access_secret_version(project_id, secret_id, version_id="latest"):
     try:
         response = client.access_secret_version(request={"name": name})
         log.debug(f"Secret '{name}' was found.")
-        payload = response.payload.data.decode("UTF-8")
+        payload = response.payload.data
     except gExceptions.NotFound:
         log.debug(f"Secret '{name}' was not found!")
         payload = None
@@ -315,6 +315,7 @@ def install_custom_scripts(check_hash=False):
             "login": ["login"],
             "compute": compute_tokens,
             "controller": ["controller", "prolog", "epilog"],
+            "dbd": ["dbd"],
         },
         lkp.instance_role,
         [],
@@ -1429,6 +1430,14 @@ class Lookup:
         return self.cfg.slurm_control_addr
 
     @property
+    def dbd_separate(self):
+        return (self.cfg.slurm_dbd_host != self.cfg.slurm_control_host)
+
+    @property
+    def dbd_host(self):
+        return self.cfg.slurm_dbd_host
+
+    @property
     def control_host(self):
         return self.cfg.slurm_control_host
 
@@ -1464,6 +1473,10 @@ class Lookup:
     @property
     def is_controller(self):
         return self.instance_role_safe == "controller"
+
+    @property
+    def is_key_master(self):
+        return self.instance_role_safe in ["dbd", "controller"]
 
     @cached_property
     def compute(self):

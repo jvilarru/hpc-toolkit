@@ -315,7 +315,7 @@ def install_slurm_conf(lkp: util.Lookup) -> None:
 def install_slurmdbd_conf(lkp: util.Lookup) -> None:
     """install slurmdbd.conf"""
     conf_options = {
-        "control_host": lkp.control_host,
+        "dbd_host": lkp.dbd_host,
         "slurmlog": dirs.log,
         "state_save": slurmdirs.state,
         "db_name": "slurm_acct_db",
@@ -327,7 +327,7 @@ def install_slurmdbd_conf(lkp: util.Lookup) -> None:
 
     if lkp.cfg.cloudsql_secret:
         secret_name = f"{lkp.cfg.slurm_cluster_name}-slurm-secret-cloudsql"
-        payload = json.loads(util.access_secret_version(lkp.project, secret_name))
+        payload = json.loads(util.access_secret_version(lkp.project, secret_name).decode("UTF-8"))
 
         if payload["db_name"] and payload["db_name"] != "":
             conf_options["db_name"] = payload["db_name"]

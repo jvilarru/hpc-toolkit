@@ -127,6 +127,28 @@ EOD
   default     = 300
 }
 
+
+variable "dbd_startup_scripts" {
+  description = "List of scripts to be ran on dbd VM startup."
+  type = list(object({
+    filename = string
+    content  = string
+  }))
+  default = []
+}
+
+variable "dbd_startup_scripts_timeout" {
+  description = <<EOD
+The timeout (seconds) applied to each script in dbd_startup_scripts. If
+any script exceeds this timeout, then the instance setup process is considered
+failed and handled accordingly.
+
+NOTE: When set to 0, the timeout is considered infinite and thus disabled.
+EOD
+  type        = number
+  default     = 300
+}
+
 variable "controller_startup_scripts" {
   description = "List of scripts to be ran on controller VM startup."
   type = list(object({
@@ -458,4 +480,39 @@ variable "endpoint_versions" {
   default = {
     compute = null
   }
+}
+
+variable "slurm_dbd_host" {
+  type        = string
+  description = <<EOD
+The short, or long, hostname of the machine where Slurm DB daemon is
+executed (i.e. the name returned by the command "hostname -s").
+
+This value is passed to slurm.conf such that:
+AccountingStorageHost={var.slurm_dbd_host}
+
+A null value specifies to use the controller as the Slurm DB daemon.
+
+EOD
+  default     = null
+}
+
+variable "munge_secret" {
+  description = <<EOD
+In case munge_secret is already stored as google_secret_manager_secret
+specify it using this variable. Leave it unspecified or null to generate a new
+munge secret.
+EOD
+  type        = string
+  default     = null
+}
+
+variable "jwt_secret" {
+  description = <<EOD
+In case jwt_secret is already stored as google_secret_manager_secret
+specify it using this variable. Leave it unspecified or null to generate a new
+jwt secret.
+EOD
+  type        = string
+  default     = null
 }

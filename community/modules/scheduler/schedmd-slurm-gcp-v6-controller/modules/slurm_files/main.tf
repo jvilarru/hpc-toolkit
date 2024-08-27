@@ -60,6 +60,7 @@ locals {
     controller_startup_scripts_timeout = var.enable_hybrid ? null : var.controller_startup_scripts_timeout
     compute_startup_scripts_timeout    = var.compute_startup_scripts_timeout
     login_startup_scripts_timeout      = var.enable_hybrid ? null : var.login_startup_scripts_timeout
+    dbd_startup_scripts_timeout        = var.dbd_startup_scripts_timeout
     munge_mount                        = local.munge_mount
 
     # slurm conf
@@ -82,10 +83,14 @@ locals {
     output_dir              = var.enable_hybrid ? local.output_dir : null
     install_dir             = var.enable_hybrid ? local.install_dir : null
     slurm_control_host      = var.enable_hybrid ? var.slurm_control_host : null
+    slurm_dbd_host          = var.slurm_dbd_host
     slurm_control_host_port = var.enable_hybrid ? local.slurm_control_host_port : null
     slurm_control_addr      = var.enable_hybrid ? var.slurm_control_addr : null
     slurm_bin_dir           = var.enable_hybrid ? local.slurm_bin_dir : null
     slurm_log_dir           = var.enable_hybrid ? local.slurm_log_dir : null
+
+    munge_secret = var.munge_secret
+    jwt_secret   = var.jwt_secret
 
     # config files templates
     slurmdbd_conf_tpl = file(coalesce(var.slurmdbd_conf_tpl, "${local.etc_dir}/slurmdbd.conf.tpl"))
@@ -214,6 +219,17 @@ resource "google_storage_bucket_object" "login_startup_scripts" {
   content = each.value.content
 }
 
+resource "google_storage_bucket_object" "dbd_startup_scripts" {
+  for_each = {
+    for x in var.dbd_startup_scripts
+    : replace(basename(x.filename), "/[^a-zA-Z0-9-_]/", "_") => x
+  }
+
+  bucket  = var.bucket_name
+  name    = format("%s/slurm-dbd-script-%s", local.bucket_dir, each.key)
+  content = each.value.content
+}
+
 resource "google_storage_bucket_object" "prolog_scripts" {
   for_each = {
     for x in local.prolog_scripts
@@ -262,6 +278,7 @@ locals {
     [for k, f in google_storage_bucket_object.compute_startup_scripts : f.md5hash],
     [for k, f in google_storage_bucket_object.nodeset_startup_scripts : f.md5hash],
     [for k, f in google_storage_bucket_object.login_startup_scripts : f.md5hash],
+    [for k, f in google_storage_bucket_object.dbd_startup_scripts : f.md5hash],
     [for k, f in google_storage_bucket_object.prolog_scripts : f.md5hash],
     [for k, f in google_storage_bucket_object.epilog_scripts : f.md5hash]
   ])))

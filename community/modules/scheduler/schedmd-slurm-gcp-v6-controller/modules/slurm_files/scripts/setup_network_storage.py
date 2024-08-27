@@ -195,7 +195,8 @@ def mount_fstab(mounts, log):
 def munge_mount_handler():
     if not cfg.munge_mount:
         log.error("Missing munge_mount in cfg")
-    elif lkp.is_controller:
+    #Key master are the instances with role controller or dbd, those get the key directly from google secret manager
+    elif lkp.is_key_master:
         return
 
     mount = cfg.munge_mount

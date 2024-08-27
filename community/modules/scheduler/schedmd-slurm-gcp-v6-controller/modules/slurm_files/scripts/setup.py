@@ -105,7 +105,7 @@ def end_motd(broadcast=True):
         "wall -n '*** Slurm {} setup complete ***'".format(lkp.instance_role),
         timeout=30,
     )
-    if lkp.instance_role != "controller":
+    if lkp.instance_role not in  ["controller","dbd"]:
         run(
             """wall -n '
 /home on the controller was mounted over the existing /home.
@@ -129,6 +129,9 @@ def run_custom_scripts():
     if lkp.is_controller:
         # controller has all scripts, but only runs controller.d
         custom_dirs = [custom_dir / "controller.d"]
+    elif lkp.instance_role == "dbd":
+        # dbd setup with only dbd.d
+        custom_dirs = [custom_dir / "dbd.d"]
     elif lkp.instance_role == "compute":
         # compute setup with compute.d and nodeset.d
         custom_dirs = [custom_dir / "compute.d", custom_dir / "nodeset.d"]
@@ -151,6 +154,8 @@ def run_custom_scripts():
         for script in custom_scripts:
             if "/controller.d/" in str(script):
                 timeout = lkp.cfg.get("controller_startup_scripts_timeout", 300)
+            elif "/dbd.d/" in str(script):
+                timeout = lkp.cfg.get("dbd_startup_scripts_timeout", 300)
             elif "/compute.d/" in str(script) or "/nodeset.d/" in str(script):
                 timeout = lkp.cfg.get("compute_startup_scripts_timeout", 300)
             elif "/login.d/" in str(script):
@@ -197,7 +202,12 @@ def setup_jwt_key():
     if jwt_key.exists():
         log.info("JWT key already exists. Skipping key generation.")
     else:
-        run("dd if=/dev/urandom bs=32 count=1 > " + str(jwt_key), shell=True)
+        if cfg.jwt_secret:
+            payload = util.access_secret_version(lkp.project, cfg.jwt_secret)
+            with open(jwt_key, "wb") as f:
+                f.write(payload)
+        else:
+            run("dd if=/dev/urandom bs=32 count=1 > " + str(jwt_key), shell=True)
 
     util.chown_slurm(jwt_key, mode=0o400)
 
@@ -208,7 +218,12 @@ def setup_munge_key():
     if munge_key.exists():
         log.info("Munge key already exists. Skipping key generation.")
     else:
-        run("create-munge-key -f", timeout=30)
+        if cfg.munge_secret:
+            payload = util.access_secret_version(lkp.project, cfg.munge_secret)
+            with open(munge_key, "wb") as f:
+                f.write(payload)
+        else:
+            run("create-munge-key -f", timeout=30)
 
     shutil.chown(munge_key, user="munge", group="munge")
     os.chmod(munge_key, stat.S_IRUSR)
@@ -315,6 +330,32 @@ def configure_dirs():
     if scripts_log.exists() and scripts_log.is_symlink():
         scripts_log.unlink()
     scripts_log.symlink_to(dirs.log)
+
+def setup_dbd():
+    """run dbd node setup"""
+    log.info("Setting up dbd")
+
+    install_custom_scripts()
+    conf.install_slurmdbd_conf(lkp)
+
+    setup_jwt_key()
+    setup_munge_key()
+
+    if not cfg.cloudsql_secret:
+        configure_mysql()
+    run("systemctl enable slurmdbd", timeout=30)
+    run("systemctl restart slurmdbd", timeout=30)
+
+    setup_network_storage()
+    setup_sudoers()
+
+    run_custom_scripts()
+
+    log.info("Check status of cluster services")
+    run("systemctl status munge", timeout=30)
+    run("systemctl status slurmdbd", timeout=30)
+
+    log.info("Done setting up dbd")
 
 
 def setup_controller():
@@ -466,6 +507,7 @@ def main():
         "controller": setup_controller,
         "compute": setup_compute,
         "login": setup_login,
+        "dbd": setup_dbd,
     }.get(
         lkp.instance_role,
         lambda: log.fatal(f"Unknown node role: {lkp.instance_role}"))()
