@@ -145,6 +145,8 @@ module "slurm_files" {
   cloudsql_secret = try(
     one(google_secret_manager_secret_version.cloudsql_version[*].id),
   null)
+  munge_secret = var.munge_secret
+  jwt_secret   = var.jwt_secret
 
   controller_startup_scripts         = local.ghpc_startup_script_controller
   controller_startup_scripts_timeout = var.controller_startup_scripts_timeout
@@ -183,6 +185,7 @@ module "slurm_files" {
   # Use legacy format for now
   nodeset_tpu = values(module.slurm_nodeset_tpu)[*]
 
+  slurm_dbd_host = var.slurm_dbd_instance
 
   depends_on = [module.bucket]
 

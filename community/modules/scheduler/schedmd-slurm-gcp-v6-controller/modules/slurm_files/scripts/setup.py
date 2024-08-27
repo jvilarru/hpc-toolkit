@@ -374,14 +374,15 @@ def setup_controller():
 
     run_custom_scripts()
 
-    if not cfg.cloudsql_secret:
-        configure_mysql()
+    if not lkp.dbd_separate:
+        if not cfg.cloudsql_secret:
+            configure_mysql()
 
-    run("systemctl enable slurmdbd", timeout=30)
-    run("systemctl restart slurmdbd", timeout=30)
+        run("systemctl enable slurmdbd", timeout=30)
+        run("systemctl restart slurmdbd", timeout=30)
 
-    # Wait for slurmdbd to come up
-    time.sleep(5)
+        # Wait for slurmdbd to come up
+        time.sleep(5)
 
     sacctmgr = f"{slurmdirs.prefix}/bin/sacctmgr -i"
     result = run(
@@ -407,7 +408,8 @@ def setup_controller():
 
     log.info("Check status of cluster services")
     run("systemctl status munge", timeout=30)
-    run("systemctl status slurmdbd", timeout=30)
+    if not lkp.dbd_separate:
+        run("systemctl status slurmdbd", timeout=30)
     run("systemctl status slurmctld", timeout=30)
     run("systemctl status slurmrestd", timeout=30)
 

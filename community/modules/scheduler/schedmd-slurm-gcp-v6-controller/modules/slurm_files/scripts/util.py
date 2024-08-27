@@ -408,6 +408,8 @@ def load_config_data(config):
         cfg.slurm_bin_dir = slurmdirs.prefix / "bin"
     if not cfg.slurm_control_host:
         cfg.slurm_control_host = f"{cfg.slurm_cluster_name}-controller"
+    if not cfg.slurm_dbd_host:
+        cfg.slurm_dbd_host = cfg.slurm_control_host
     if not cfg.slurm_control_host_port:
         cfg.slurm_control_host_port = "6820-6830"
     if not cfg.munge_mount:

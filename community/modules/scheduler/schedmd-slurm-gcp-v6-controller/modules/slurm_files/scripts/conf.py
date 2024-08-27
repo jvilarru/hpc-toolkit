@@ -298,6 +298,7 @@ def install_slurm_conf(lkp: util.Lookup) -> None:
         "name": lkp.cfg.slurm_cluster_name,
         "control_addr": lkp.control_addr if lkp.control_addr else lkp.hostname_fqdn,
         "control_host": lkp.control_host,
+        "dbd_host" : lkp.dbd_host,
         "control_host_port": lkp.control_host_port,
         "scripts": dirs.scripts,
         "slurmlog": dirs.log,
@@ -537,7 +538,8 @@ def install_topology_conf(lkp: util.Lookup) -> None:
 
 def gen_controller_configs(lkp: util.Lookup) -> None:
     install_slurm_conf(lkp)
-    install_slurmdbd_conf(lkp)
+    if not lkp.dbd_separate:
+        install_slurmdbd_conf(lkp)
     gen_cloud_conf(lkp)
     gen_cloud_gres_conf(lkp)
     install_gres_conf(lkp)

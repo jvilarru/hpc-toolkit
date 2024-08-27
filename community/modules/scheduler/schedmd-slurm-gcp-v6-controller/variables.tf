@@ -599,6 +599,26 @@ EOD
   sensitive = true
 }
 
+variable "munge_secret" {
+  description = <<EOD
+In case munge_secret is already stored as google_secret_manager_secret
+specify it using this variable. Leave it unspecified or null to generate a new
+munge secret
+EOD
+  type        = string
+  default     = null
+}
+
+variable "jwt_secret" {
+  description = <<EOD
+In case jwt_secret is already stored as google_secret_manager_secret
+specify it using this variable. Leave it unspecified or null to generate a new
+jwt secret
+EOD
+  type        = string
+  default     = null
+}
+
 variable "enable_slurm_gcp_plugins" {
   description = <<EOD
 Enables calling hooks in scripts/slurm_gcp_plugins during cluster resume and suspend.
@@ -652,4 +672,15 @@ variable "disable_default_mounts" { # tflint-ignore: terraform_unused_declaratio
     condition     = var.disable_default_mounts == null
     error_message = "DEPRECATED: Use `enable_default_mounts` instead."
   }
+}
+
+variable "slurm_dbd_instance" {
+  type        = string
+  default     = null
+  description = <<EOD
+Specify using this variable the external dbd to be used for this cluster, keep
+this unspecified or null to use the internal dbd, this is used only when you
+pretend to use slurm multicluster feature:
+https://slurm.schedmd.com/multi_cluster.html
+EOD
 }
