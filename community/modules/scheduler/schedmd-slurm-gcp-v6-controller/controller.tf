@@ -74,6 +74,7 @@ resource "google_compute_disk" "controller_disk" {
 # INSTANCE TEMPLATE
 module "slurm_controller_template" {
   source = "../../internal/slurm-gcp/instance_template"
+  count  = var.enable_hybrid ? 0 : 1
 
   project_id          = local.controller_project_id
   region              = var.region
@@ -120,9 +121,10 @@ module "slurm_controller_template" {
 # INSTANCE
 resource "google_compute_instance_from_template" "controller" {
   name                     = "${local.slurm_cluster_name}-controller"
+  count                    = var.enable_hybrid ? 0 : 1
   project                  = local.controller_project_id
   zone                     = var.zone
-  source_instance_template = module.slurm_controller_template.self_link
+  source_instance_template = module.slurm_controller_template[0].self_link
 
   allow_stopping_for_update = true
 
@@ -142,7 +144,7 @@ resource "google_compute_instance_from_template" "controller" {
 
 moved {
   from = module.slurm_controller_instance.google_compute_instance_from_template.slurm_instance[0]
-  to   = google_compute_instance_from_template.controller
+  to   = google_compute_instance_from_template.controller[0]
 }
 
 # SECRETS: CLOUDSQL

@@ -449,7 +449,7 @@ class ClusterInfo:
         # controller & login until we start setting them.
 
         filters = {
-            "module": "module.slurm_controller.module.slurm_controller_instance",  #pylint:disable=line-too-long
+            "module": "module.slurm_controller.module.slurm_controller_instance[0]",  #pylint:disable=line-too-long
             "name": "slurm_instance",
         }
         tf_node = self._get_tf_state_resource(tf_state, filters)[0]["instances"][0]  #pylint:disable=line-too-long
@@ -533,7 +533,7 @@ class ClusterInfo:
                 mgmt_nodes = self._create_model_instances_from_tf_state(
                     state,
                     {
-                        "module": "module.slurm_controller.module.slurm_controller_instance",  # pylint: disable=line-too-long
+                        "module": "module.slurm_controller.module.slurm_controller_instance[0]",  # pylint: disable=line-too-long
                         "name": "slurm_instance",
                     },
                 )
