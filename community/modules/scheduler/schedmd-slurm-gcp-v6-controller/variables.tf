@@ -681,6 +681,23 @@ EOD
   default     = false
 }
 
+variable "hybrid_conf" {
+  description = "The hybrid configuration"
+  type = object({
+    slurm_bin_dir           = optional(string) #done
+    slurm_log_dir           = optional(string) #done
+    slurm_control_host      = string
+    slurm_control_host_port = optional(string) #done
+    slurm_control_addr      = optional(string) #done
+    output_dir              = optional(string) #done
+    install_dir             = optional(string) #done
+    slurm_uid               = optional(number)
+    slurm_gid               = optional(number)
+    munge_secret            = string
+  })
+  default = null
+}
+
 # DEPRECATED VARIABLES
 
 variable "enable_devel" { # tflint-ignore: terraform_unused_declarations

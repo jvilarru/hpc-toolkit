@@ -352,108 +352,21 @@ EOD
   default     = false
 }
 
-variable "google_app_cred_path" {
-  type        = string
-  description = "Path to Google Application Credentials."
-  default     = null
-}
-
-variable "slurm_bin_dir" {
-  type        = string
-  description = <<EOD
-Path to directory of Slurm binary commands (e.g. scontrol, sinfo). If 'null',
-then it will be assumed that binaries are in $PATH.
-EOD
-  default     = null
-}
-
-variable "slurm_log_dir" {
-  type        = string
-  description = "Directory where Slurm logs to."
-  default     = "/var/log/slurm"
-}
-
-variable "slurm_control_host" {
-  type        = string
-  description = <<EOD
-The short, or long, hostname of the machine where Slurm control daemon is
-executed (i.e. the name returned by the command "hostname -s").
-
-This value is passed to slurm.conf such that:
-SlurmctldHost={var.slurm_control_host}\({var.slurm_control_addr}\)
-
-See https://slurm.schedmd.com/slurm.conf.html#OPT_SlurmctldHost
-EOD
-  default     = null
-}
-
-variable "slurm_control_host_port" {
-  type        = string
-  description = <<EOD
-The port number that the Slurm controller, slurmctld, listens to for work.
-
-See https://slurm.schedmd.com/slurm.conf.html#OPT_SlurmctldPort
-EOD
-  default     = "6818"
-}
-
-variable "slurm_control_addr" {
-  type        = string
-  description = <<EOD
-The IP address or a name by which the address can be identified.
-
-This value is passed to slurm.conf such that:
-SlurmctldHost={var.slurm_control_host}\({var.slurm_control_addr}\)
-
-See https://slurm.schedmd.com/slurm.conf.html#OPT_SlurmctldHost
-EOD
-  default     = null
-}
-
-variable "output_dir" {
-  type        = string
-  description = <<EOD
-Directory where this module will write its files to. These files include:
-cloud.conf; cloud_gres.conf; config.yaml; resume.py; suspend.py; and util.py.
-EOD
-  default     = null
-}
-
-variable "install_dir" {
-  type        = string
-  description = <<EOD
-Directory where the hybrid configuration directory will be installed on the
-on-premise controller (e.g. /etc/slurm/hybrid). This updates the prefix path
-for the resume and suspend scripts in the generated `cloud.conf` file.
-
-This variable should be used when the TerraformHost and the SlurmctldHost
-are different.
-
-This will default to var.output_dir if null.
-EOD
-  default     = null
-}
-
-variable "munge_mount" {
-  description = <<-EOD
-  Remote munge mount for compute and login nodes to acquire the munge.key.
-
-  By default, the munge mount server will be assumed to be the
-  `var.slurm_control_host` (or `var.slurm_control_addr` if non-null) when
-  `server_ip=null`.
-  EOD
+variable "hybrid_conf" {
+  description = "The hybrid configuration"
   type = object({
-    server_ip     = string
-    remote_mount  = string
-    fs_type       = string
-    mount_options = string
+    slurm_bin_dir           = optional(string) #done
+    slurm_log_dir           = optional(string) #done
+    slurm_control_host      = string
+    slurm_control_host_port = optional(string) #done
+    slurm_control_addr      = optional(string) #done
+    output_dir              = optional(string) #done
+    install_dir             = optional(string) #done
+    slurm_uid               = optional(number)
+    slurm_gid               = optional(number)
+    munge_secret            = string
   })
-  default = {
-    server_ip     = null
-    remote_mount  = "/etc/munge/"
-    fs_type       = "nfs"
-    mount_options = ""
-  }
+  default = null
 }
 
 variable "endpoint_versions" {

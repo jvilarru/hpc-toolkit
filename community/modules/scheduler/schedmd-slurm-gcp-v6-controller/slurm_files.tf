@@ -168,6 +168,7 @@ module "slurm_files" {
   prolog_scripts                = var.prolog_scripts
 
   enable_hybrid = var.enable_hybrid
+  hybrid_conf   = var.enable_hybrid ? var.hybrid_conf : null
 
   disable_default_mounts = !var.enable_default_mounts
   network_storage = [
