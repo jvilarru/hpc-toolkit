@@ -107,5 +107,6 @@ No modules.
 | <a name="output_nodeset_dyn"></a> [nodeset\_dyn](#output\_nodeset\_dyn) | Cluster nodesets (dynamic). |
 | <a name="output_nodeset_tpu"></a> [nodeset\_tpu](#output\_nodeset\_tpu) | Cluster nodesets (TPU). |
 | <a name="output_partitions"></a> [partitions](#output\_partitions) | Cluster partitions. |
+| <a name="output_scripts_dir"></a> [scripts\_dir](#output\_scripts\_dir) | The scripts dir location. |
 | <a name="output_slurm_bucket_path"></a> [slurm\_bucket\_path](#output\_slurm\_bucket\_path) | GCS Bucket URI of Slurm cluster file storage. |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->

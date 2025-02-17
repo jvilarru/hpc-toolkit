@@ -58,3 +58,8 @@ output "nodeset_tpu" {
   description = "Cluster nodesets (TPU)."
   value       = lookup(local.config, "nodeset_tpu", null)
 }
+
+output "scripts_dir" {
+  value       = local.scripts_dir
+  description = "The scripts dir location."
+}
