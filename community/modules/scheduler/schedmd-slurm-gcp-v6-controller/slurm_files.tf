@@ -121,6 +121,8 @@ locals {
 
   login_startup_scripts   = { for g in var.login_nodes : g.group_name => local.ghpc_startup_script_login }
   nodeset_startup_scripts = { for k, v in local.nodeset_map : k => v.startup_script }
+
+  output_dir = var.enable_hybrid ? try(abspath(coalesce(var.hybrid_conf.output_dir, ".")), abspath(".")) : null
 }
 
 module "daos_network_storage_scripts" {
