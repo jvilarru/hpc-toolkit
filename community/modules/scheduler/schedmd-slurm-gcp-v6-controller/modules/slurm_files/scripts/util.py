@@ -539,6 +539,7 @@ def _fill_cfg_defaults(cfg: NSDict) -> NSDict:
         cfg.slurm_log_dir = dirs.log
         cfg.slurm_bin_dir = slurmdirs.prefix / "bin"
         cfg.slurm_control_host = f"{cfg.slurm_cluster_name}-controller"
+        cfg.slurm_control_addr = host_lookup(cfg.slurm_control_host)
         cfg.slurm_control_host_port = "6820-6830"
         cfg.munge_mount = NSDict(
             {
@@ -557,6 +558,7 @@ def _fill_cfg_defaults(cfg: NSDict) -> NSDict:
         #Default by python
         cfg.slurm_log_dir = hybrid_conf.slurm_log_dir if hybrid_conf.slurm_log_dir else dirs.log
         cfg.slurm_bin_dir = hybrid_conf.slurm_bin_dir if hybrid_conf.slurm_bin_dir else slurmdirs.prefix / "bin"
+        cfg.slurm_control_addr = hybrid_conf.slurm_control_addr or host_lookup(cfg.slurm_control_host)
 
     network_storage_iter: Iterable[Any] = filter(
         None,
@@ -720,6 +722,7 @@ def init_log_and_parse(parser: argparse.ArgumentParser) -> argparse.Namespace:
         help="Enable detailed api request output",
     )
     args = parser.parse_args()
+    lookup().hybrid_setup = getattr(args, 'hybrid', False)
     loglevel = args.loglevel
     if lookup().cfg.enable_debug_logging:
         loglevel = logging.DEBUG
@@ -1367,6 +1370,7 @@ class Lookup:
     def __init__(self, cfg):
         self._cfg = cfg
         self.template_cache_path = Path(__file__).parent / "template_info.cache"
+        self.hybrid_setup = False
 
     @property
     def cfg(self):
@@ -1420,6 +1424,10 @@ class Lookup:
     @property
     def is_login_node(self):
         return self.instance_role_safe == "login"
+
+    @property
+    def is_hybrid_setup(self):
+        return self.hybrid_setup
 
     @cached_property
     def compute(self):
