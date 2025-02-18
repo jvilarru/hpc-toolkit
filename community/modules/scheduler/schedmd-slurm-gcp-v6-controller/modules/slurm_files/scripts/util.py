@@ -100,6 +100,7 @@ slurmdirs = NSDict(
     prefix = Path("/usr/local"),
     etc = Path("/usr/local/etc/slurm"),
     state = Path("/var/spool/slurm"),
+    home = Path("/var/lib/slurm"),
 )
 
 
