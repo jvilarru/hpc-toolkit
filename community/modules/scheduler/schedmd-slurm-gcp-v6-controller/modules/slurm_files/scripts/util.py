@@ -419,8 +419,8 @@ def blob_get(file):
     return storage_client().get_bucket(bucket_name).blob(blob_name)
 
 
-def blob_list(prefix="", delimiter=None):
-    bucket_name, path = _get_bucket_and_common_prefix()
+def blob_list(prefix="", delimiter=None, bucket: Optional[str] = None):
+    bucket_name, path = parse_bucket_uri(bucket) if bucket else _get_bucket_and_common_prefix()
     blob_prefix = f"{path}/{prefix}"
     # Note: The call returns a response only when the iterator is consumed.
     blobs = storage_client().list_blobs(
@@ -607,13 +607,13 @@ class _ConfigBlobs:
             h.update(blob.md5_hash.encode("utf-8"))
         return h.hexdigest() 
 
-def _list_config_blobs() -> _ConfigBlobs:
-    _, common_prefix = _get_bucket_and_common_prefix()
+def _list_config_blobs(bucket: Optional[str] = None) -> _ConfigBlobs:
+    _, common_prefix = parse_bucket_uri(bucket) if bucket else _get_bucket_and_common_prefix()
     
     core: Optional[storage.Blob] = None
     rest: Dict[str, List[storage.Blob]] = {"partition": [], "nodeset": [], "nodeset_dyn": [], "nodeset_tpu": []}
 
-    for blob in blob_list(prefix=""):
+    for blob in blob_list(prefix="",bucket=bucket):
         if blob.name == f"{common_prefix}/config.yaml":
             core = blob
         for key in rest.keys():
@@ -624,9 +624,9 @@ def _list_config_blobs() -> _ConfigBlobs:
         raise DeffetiveStoredConfigError(f"{common_prefix}/config.yaml not found in bucket")
     return _ConfigBlobs(core=core, **rest)
 
-def _fetch_config(old_hash: Optional[str]) -> Optional[Tuple[NSDict, str]]:
+def _fetch_config(old_hash: Optional[str], bucket: Optional[str] = None) -> Optional[Tuple[NSDict, str]]:
     """Fetch config from bucket, returns None if no changes are detected."""
-    blobs = _list_config_blobs()
+    blobs = _list_config_blobs(bucket=bucket)
     if Path(CONFIG_FILE).exists() and old_hash == blobs.hash:
         return None
 
@@ -681,7 +681,7 @@ def _assemble_config(
 
     return _fill_cfg_defaults(cfg)
 
-def fetch_config() -> Tuple[bool, NSDict]:
+def fetch_config(bucket: Optional[str] = None) -> Tuple[bool, NSDict]:
     """
     Fetches config from bucket and saves it locally
     Returns True if new (updated) config was fetched
@@ -689,7 +689,7 @@ def fetch_config() -> Tuple[bool, NSDict]:
     hash_file = Path(CONFIG_FILE).with_name(".config.hash")
     old_hash = hash_file.read_text() if hash_file.exists() else None
 
-    cfg_and_hash = _fetch_config(old_hash=old_hash)
+    cfg_and_hash = _fetch_config(old_hash=old_hash,bucket=bucket)
     if not cfg_and_hash:
         return False, _load_config()
 
