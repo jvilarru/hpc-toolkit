@@ -20,6 +20,7 @@ import sys
 import stat
 import time
 import logging
+import base64
 
 import shutil
 from pathlib import Path
@@ -27,7 +28,7 @@ from concurrent.futures import as_completed
 from addict import Dict as NSDict # type: ignore
 
 import util
-from util import lookup, run, dirs, separate
+from util import lookup, run, dirs, separate, access_secret_version
 from more_executors import Executors, ExceptionRetryPolicy
 
 
@@ -191,12 +192,34 @@ def mount_fstab(mounts, log):
             except Exception as e:
                 raise e
 
+def hybrid_munge_setup():
+    munge_key = Path(dirs.munge / "munge.key")
+    munge_secret = lookup().cfg.hybrid_conf.munge_secret
+
+    log.info(f"Accessing munge secret {munge_secret}")
+    payload = access_secret_version(lookup().cfg.project,munge_secret)
+    if payload:
+        decoded_secret = base64.b64decode(payload)
+        with open(munge_key, "wb") as file:
+            file.write(decoded_secret)
+
+        log.info("Restrict permissions of munge.key")
+        shutil.chown(munge_key, user="munge", group="munge")
+        os.chmod(munge_key, stat.S_IRUSR)
+    else:
+        log.error(f"Payload retrieved from munge secret {munge_secret} is not valid")
 
 def munge_mount_handler():
+    if lookup().is_controller:
+        return
+    if lookup().cfg.hybrid_conf:
+        if lookup().cfg.hybrid_conf.munge_secret:
+            hybrid_munge_setup()
+        else:
+            log.error("Did not provide a munge_secret in the config")
+        return
     if not lookup().cfg.munge_mount:
         log.error("Missing munge_mount in cfg")
-    elif lookup().is_controller:
-        return
 
     mount = lookup().cfg.munge_mount
     server_ip = (
