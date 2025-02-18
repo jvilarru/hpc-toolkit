@@ -593,6 +593,25 @@ def setup_cloud_ops() -> None:
 
     run("systemctl restart google-cloud-ops-agent.service", timeout=30)
 
+def setup_hybrid(bucket: str): #HYBRID-TODO review this
+    log.info("Starting hybrid setup, fetching config")
+    sleep_seconds = 5
+    while True:
+        try:
+            _, cfg = util.fetch_config(bucket=bucket)
+            util.update_config(cfg)
+            lookup().hybrid_setup = True
+            break
+        except util.DeffetiveStoredConfigError as e:
+            log.warning(f"config is not ready yet: {e}, sleeping for {sleep_seconds}s")
+        except Exception as e:
+            log.exception(f"unexpected error while fetching config, sleeping for {sleep_seconds}s")
+        time.sleep(sleep_seconds)
+    log.info("Config fetched")
+    log.info("Generating the config files")
+    conf.gen_controller_configs(lookup())
+    log.info("Success")
+
 def main():
     start_motd()
 
@@ -631,7 +650,10 @@ if __name__ == "__main__":
     args = util.init_log_and_parse(parser)
 
     try:
-        main()
+        if args.hybrid:
+            setup_hybrid(args.bucket)
+        else:
+            main()
     except subprocess.TimeoutExpired as e:
         stdout = (e.stdout or b"").decode().strip()
         stderr = (e.stderr or b"").decode().strip()
