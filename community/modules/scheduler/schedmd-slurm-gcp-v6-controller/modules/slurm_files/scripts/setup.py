@@ -576,7 +576,9 @@ def main():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--slurmd-feature", dest="slurmd_feature", help="Unused, to be removed.")
-    _ = util.init_log_and_parse(parser)
+    parser.add_argument("--hybrid", dest="hybrid", action="store_true", help="Do the hybrid setup.")
+    parser.add_argument("--bucket", dest="bucket", help="The bucket URI where config.yaml is.")
+    args = util.init_log_and_parse(parser)
 
     try:
         main()
