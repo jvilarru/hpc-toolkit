@@ -678,7 +678,7 @@ def fetch_config(bucket: Optional[str] = None) -> Tuple[bool, NSDict]:
     Fetches config from bucket and saves it locally
     Returns True if new (updated) config was fetched
     """
-    hash_file = Path("/slurm/scripts/.config.hash")
+    hash_file = Path(CONFIG_FILE).with_name(".config.hash")
     if lookup().is_hybrid_setup:
         output_dir = (lookup().cfg.hybrid_conf and lookup().cfg.hybrid_conf.output_dir) or "."
         hash_file = Path(f"{output_dir}/.config.hash")
