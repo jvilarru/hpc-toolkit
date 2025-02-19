@@ -364,7 +364,9 @@ def configure_dirs():
         sl.symlink_to(tgt)
 
     for f in ("sort_nodes.py",): # copy auxiliary scripts
-        dst = Path(lookup().cfg.slurm_bin_dir) / f
+        #HYBRID-TODO Need this in the compute node, double check it
+        #dst = Path(lookup().cfg.slurm_bin_dir) / f
+        dst = Path(slurmdirs.prefix / "bin") / f
         shutil.copyfile(util.scripts_dir / f, dst)
         os.chmod(dst, 0o755)
 
@@ -593,14 +595,14 @@ def setup_cloud_ops() -> None:
 
     run("systemctl restart google-cloud-ops-agent.service", timeout=30)
 
-def setup_hybrid(bucket: str): #HYBRID-TODO review this
-    log.info("Starting hybrid setup, fetching config")
+def get_config(bucket:str = None):
     sleep_seconds = 5
     while True:
         try:
             _, cfg = util.fetch_config(bucket=bucket)
             util.update_config(cfg)
-            lookup().hybrid_setup = True
+            if bucket is not None:
+                lookup().hybrid_setup = True
             break
         except util.DeffetiveStoredConfigError as e:
             log.warning(f"config is not ready yet: {e}, sleeping for {sleep_seconds}s")
@@ -608,6 +610,10 @@ def setup_hybrid(bucket: str): #HYBRID-TODO review this
             log.exception(f"unexpected error while fetching config, sleeping for {sleep_seconds}s")
         time.sleep(sleep_seconds)
     log.info("Config fetched")
+
+def setup_hybrid(bucket: str): #HYBRID-TODO review this
+    log.info("Starting hybrid setup, fetching config")
+    get_config(bucket)
     log.info("Generating the config files")
     conf.gen_controller_configs(lookup())
     log.info("Success")
@@ -616,18 +622,7 @@ def main():
     start_motd()
 
     log.info("Starting setup, fetching config")
-    sleep_seconds = 5
-    while True:
-        try:
-            _, cfg = util.fetch_config()
-            util.update_config(cfg)
-            break
-        except util.DeffetiveStoredConfigError as e:
-            log.warning(f"config is not ready yet: {e}, sleeping for {sleep_seconds}s")
-        except Exception as e:
-            log.exception(f"unexpected error while fetching config, sleeping for {sleep_seconds}s")
-        time.sleep(sleep_seconds)
-    log.info("Config fetched")
+    get_config()
     setup_cloud_ops()
     configure_dirs()
     # call the setup function for the instance type
