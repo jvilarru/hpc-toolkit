@@ -358,6 +358,7 @@ variable "hybrid_conf" {
   type = object({
     slurm_bin_dir           = optional(string)
     slurm_log_dir           = optional(string)
+    use_same_path_on_cloud  = optional(bool)
     slurm_control_host      = string
     slurm_control_host_port = optional(string)
     slurm_control_addr      = optional(string)

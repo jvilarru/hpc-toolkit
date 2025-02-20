@@ -126,6 +126,7 @@ locals {
     slurm_control_host_port = try(coalesce(var.hybrid_conf.slurm_control_host_port, "6817"), "6817")
     slurm_log_dir           = try(abspath(var.hybrid_conf.slurm_log_dir), null)
     slurm_bin_dir           = try(abspath(var.hybrid_conf.slurm_bin_dir), null)
+    use_same_path_on_cloud  = try(var.hybrid_conf.use_same_path_on_cloud, false)
     slurm_control_addr      = try(var.hybrid_conf.slurm_control_addr, null)
     google_app_cred_path    = try(abspath(var.hybrid_conf.google_app_cred_path), null)
   }
