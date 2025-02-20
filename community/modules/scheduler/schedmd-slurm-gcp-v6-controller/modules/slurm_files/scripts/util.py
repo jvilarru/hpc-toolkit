@@ -557,8 +557,12 @@ def _fill_cfg_defaults(cfg: NSDict) -> NSDict:
         #Default by terraform
         cfg.slurm_control_host_port = hybrid_conf.slurm_control_host_port
         #Default by python
-        cfg.slurm_log_dir = hybrid_conf.slurm_log_dir if hybrid_conf.slurm_log_dir else dirs.log
-        cfg.slurm_bin_dir = hybrid_conf.slurm_bin_dir if hybrid_conf.slurm_bin_dir else slurmdirs.prefix / "bin"
+        if lookup().is_cloud:
+            cfg.slurm_log_dir = dirs.log
+            cfg.slurm_bin_dir = slurmdirs.prefix / "bin"
+        else:
+            cfg.slurm_log_dir = hybrid_conf.slurm_log_dir if hybrid_conf.slurm_log_dir else dirs.log
+            cfg.slurm_bin_dir = hybrid_conf.slurm_bin_dir if hybrid_conf.slurm_bin_dir else slurmdirs.prefix / "bin"
         cfg.slurm_control_addr = hybrid_conf.slurm_control_addr or host_lookup(cfg.slurm_control_host)
 
     network_storage_iter: Iterable[Any] = filter(
@@ -1404,6 +1408,15 @@ class Lookup:
     @cached_property
     def control_host_addr(self):
         return self.control_addr or host_lookup(self.cfg.slurm_control_host)
+
+    @cached_property
+    def is_cloud(self):
+        ret = None
+        try:
+            ret = self.instance_role
+        except Exception as e:
+            return False
+        return ret is not None
 
     @property
     def control_host_port(self):
