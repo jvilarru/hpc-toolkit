@@ -27,8 +27,14 @@ pip install -r $SCRIPTS_DIR/requirements.txt > pip_install.log 2>&1
 echo "Generating config files"
 python3 $SCRIPTS_DIR/setup.py --hybrid --bucket ${module.slurm_files.slurm_bucket_path}
 echo "Extracting scripts"
-unzip -o slurm-gcp-devel.zip > /dev/null
-echo "Generating config.zip"
+mkdir scripts
+unzip -o slurm-gcp-devel.zip -d scripts > /dev/null
+#fix the timestamps
+find scripts -exec touch {} +
+mv config.yaml .config.hash scripts/
+chmod -R 700 scripts
+echo "Generating config.tgz"
+echo "Merge the conf files with your own conf files (integrate cloud_gres.conf into gres.conf and cloud_topology.conf into topology.conf) and move the files in the scripts directory to what you specified in the hybrid_conf.install_dir" > README
 tar czf config.tgz --exclude="*.log" --exclude="install_hybrid.sh" --exclude="*.zip" . > /dev/null 2>&1
 echo "Success"
 EOF
