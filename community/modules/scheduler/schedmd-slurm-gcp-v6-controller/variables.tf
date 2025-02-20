@@ -467,7 +467,7 @@ variable "enable_default_mounts" {
     files and the munge key across the cluster.
     EOD
   type        = bool
-  default     = true
+  default     = null
 }
 
 variable "network_storage" {
