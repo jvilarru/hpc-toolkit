@@ -27,7 +27,7 @@ pip install -r $SCRIPTS_DIR/requirements.txt > pip_install.log 2>&1
 echo "Generating config files"
 python3 $SCRIPTS_DIR/setup.py --hybrid --bucket ${module.slurm_files.slurm_bucket_path}
 echo "Extracting scripts"
-mkdir scripts
+mkdir -p scripts
 unzip -o slurm-gcp-devel.zip -d scripts > /dev/null
 #fix the timestamps
 find scripts -exec touch {} +

@@ -319,6 +319,12 @@ variable "disk_auto_delete" {
   default     = true
 }
 
+variable "munge_disk" {
+  type        = string
+  description = "The munge disk"
+  default     = null
+}
+
 variable "additional_disks" {
   type = list(object({
     source       = optional(string)

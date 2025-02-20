@@ -173,6 +173,12 @@ variable "additional_disks" {
   default = []
 }
 
+variable "munge_disk" {
+  type        = string
+  default     = null
+  description = "The munge disk"
+}
+
 ####################
 # network_interface
 ####################
