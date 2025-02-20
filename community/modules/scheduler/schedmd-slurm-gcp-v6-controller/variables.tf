@@ -696,6 +696,7 @@ variable "hybrid_conf" {
     slurm_gid               = optional(number)
     service_account_email   = optional(string)
     google_app_cred_path    = optional(string)
+    munge_snapshot          = string
   })
   default = null
 }

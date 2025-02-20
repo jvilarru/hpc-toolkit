@@ -319,6 +319,12 @@ variable "disk_auto_delete" {
   default     = true
 }
 
+variable "munge_snapshot" {
+  type        = string
+  description = "The snapshot name of the disk that contains the munge key, only used in hybrid mode."
+  default     = null
+}
+
 variable "additional_disks" {
   type = list(object({
     source       = optional(string)

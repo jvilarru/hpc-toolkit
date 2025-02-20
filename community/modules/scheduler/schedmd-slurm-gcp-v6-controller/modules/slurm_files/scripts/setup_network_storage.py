@@ -272,17 +272,18 @@ def setup_nfs_exports():
     # switch the key to remote mount path since that is what needs exporting
     mounts = resolve_network_storage()
     # manually add munge_mount
-    mounts.append(
-        NSDict(
-            {
-                "server_ip": lookup().cfg.munge_mount.server_ip,
-                "remote_mount": lookup().cfg.munge_mount.remote_mount,
-                "local_mount": Path(f"{dirs.munge}_tmp"),
-                "fs_type": lookup().cfg.munge_mount.fs_type,
-                "mount_options": lookup().cfg.munge_mount.mount_options,
-            }
+    if lookup().cfg.munge_mount:
+        mounts.append(
+            NSDict(
+                {
+                    "server_ip": lookup().cfg.munge_mount.server_ip,
+                    "remote_mount": lookup().cfg.munge_mount.remote_mount,
+                    "local_mount": Path(f"{dirs.munge}_tmp"),
+                    "fs_type": lookup().cfg.munge_mount.fs_type,
+                    "mount_options": lookup().cfg.munge_mount.mount_options,
+                }
+            )
         )
-    )
     # controller mounts
     _, con_mounts = separate_external_internal_mounts(mounts)
     con_mounts = {m.remote_mount: m for m in con_mounts}

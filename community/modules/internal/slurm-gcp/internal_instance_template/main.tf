@@ -16,6 +16,10 @@
 # Locals
 #########
 
+data "google_compute_snapshot" "munge_snapshot" {
+  count = var.munge_snapshot != null ? 1 : 0
+  name  = var.munge_snapshot
+}
 locals {
   source_image         = var.source_image != "" ? var.source_image : "centos-7-v20201112"
   source_image_family  = var.source_image_family != "" ? var.source_image_family : "centos-7"
@@ -32,7 +36,15 @@ locals {
     },
   ]
 
-  all_disks = concat(local.boot_disk, var.additional_disks)
+  munge_disk = [{
+    source_snapshot = var.munge_snapshot != null ? data.google_compute_snapshot.munge_snapshot[0].id : null
+    boot            = "false"
+    auto_delete     = true
+    device_name     = "munge"
+  }, ]
+  additional_disks = concat(var.additional_disks, var.munge_snapshot != null ? local.munge_disk : [])
+
+  all_disks = concat(local.boot_disk, local.additional_disks)
 
   # NOTE: Even if all the shielded_instance_config or confidential_instance_config
   # values are false, if the config block exists and an unsupported image is chosen,
@@ -84,18 +96,19 @@ resource "google_compute_instance_template" "tpl" {
   dynamic "disk" {
     for_each = local.all_disks
     content {
-      auto_delete  = lookup(disk.value, "auto_delete", null)
-      boot         = lookup(disk.value, "boot", null)
-      device_name  = lookup(disk.value, "device_name", null)
-      disk_name    = lookup(disk.value, "disk_name", null)
-      disk_size_gb = lookup(disk.value, "disk_size_gb", lookup(disk.value, "disk_type", null) == "local-ssd" ? "375" : null)
-      disk_type    = lookup(disk.value, "disk_type", null)
-      interface    = lookup(disk.value, "interface", lookup(disk.value, "disk_type", null) == "local-ssd" ? "NVME" : null)
-      mode         = lookup(disk.value, "mode", null)
-      source       = lookup(disk.value, "source", null)
-      source_image = lookup(disk.value, "source_image", null)
-      type         = lookup(disk.value, "disk_type", null) == "local-ssd" ? "SCRATCH" : "PERSISTENT"
-      labels       = (lookup(disk.value, "source", null) != null || lookup(disk.value, "disk_type", null) == "local-ssd") ? null : lookup(disk.value, "disk_labels", null)
+      auto_delete     = lookup(disk.value, "auto_delete", null)
+      boot            = lookup(disk.value, "boot", null)
+      device_name     = lookup(disk.value, "device_name", null)
+      disk_name       = lookup(disk.value, "disk_name", null)
+      disk_size_gb    = lookup(disk.value, "disk_size_gb", lookup(disk.value, "disk_type", null) == "local-ssd" ? "375" : null)
+      disk_type       = lookup(disk.value, "disk_type", null)
+      interface       = lookup(disk.value, "interface", lookup(disk.value, "disk_type", null) == "local-ssd" ? "NVME" : null)
+      mode            = lookup(disk.value, "mode", null)
+      source          = lookup(disk.value, "source", null)
+      source_image    = lookup(disk.value, "source_image", null)
+      source_snapshot = lookup(disk.value, "source_snapshot", null)
+      type            = lookup(disk.value, "disk_type", null) == "local-ssd" ? "SCRATCH" : "PERSISTENT"
+      labels          = (lookup(disk.value, "source", null) != null || lookup(disk.value, "disk_type", null) == "local-ssd") ? null : lookup(disk.value, "disk_labels", null)
 
       dynamic "disk_encryption_key" {
         for_each = compact([var.disk_encryption_key == null ? null : 1])

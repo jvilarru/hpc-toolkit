@@ -173,6 +173,12 @@ variable "additional_disks" {
   default = []
 }
 
+variable "munge_snapshot" {
+  type        = string
+  default     = null
+  description = "The snapshot name of the disk that contains the munge key, only used in hybrid mode."
+}
+
 ####################
 # network_interface
 ####################

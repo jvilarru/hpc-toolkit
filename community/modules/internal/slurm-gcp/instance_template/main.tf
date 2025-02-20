@@ -153,4 +153,5 @@ module "instance_template" {
     var.disk_labels,
   )
   additional_disks = local.additional_disks
+  munge_snapshot   = var.munge_snapshot
 }

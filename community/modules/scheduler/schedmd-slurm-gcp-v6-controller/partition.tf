@@ -21,6 +21,8 @@ locals {
 
   nodeset_dyn_map_ell = { for x in var.nodeset_dyn : x.nodeset_name => x... }
   nodeset_dyn_map     = { for k, vs in local.nodeset_dyn_map_ell : k => vs[0] }
+
+  munge_snapshot = var.enable_hybrid ? var.hybrid_conf.munge_snapshot : null
 }
 
 # NODESET
@@ -34,6 +36,7 @@ module "slurm_nodeset_template" {
   slurm_instance_role = "compute"
   slurm_bucket_path   = module.slurm_files.slurm_bucket_path
 
+  munge_snapshot            = local.munge_snapshot
   additional_disks          = each.value.additional_disks
   bandwidth_tier            = each.value.bandwidth_tier
   can_ip_forward            = each.value.can_ip_forward

@@ -540,6 +540,14 @@ def _fill_cfg_defaults(cfg: NSDict) -> NSDict:
         cfg.slurm_bin_dir = slurmdirs.prefix / "bin"
         cfg.slurm_control_host = f"{cfg.slurm_cluster_name}-controller"
         cfg.slurm_control_host_port = "6820-6830"
+        cfg.munge_mount = NSDict(
+            {
+                "server_ip": cfg.slurm_control_host,
+                "remote_mount": "/etc/munge",
+                "fs_type": "nfs",
+                "mount_options": "defaults,hard,intr,_netdev",
+            }
+        )
 
     else:
         #Required values
@@ -559,15 +567,6 @@ def _fill_cfg_defaults(cfg: NSDict) -> NSDict:
         if hybrid_conf.google_app_cred_path:
             cfg.google_app_cred_path = hybrid_conf.google_app_cred_path
 
-    if not cfg.munge_mount:
-        cfg.munge_mount = NSDict(
-            {
-                "server_ip": cfg.slurm_control_addr or cfg.slurm_control_host,
-                "remote_mount": "/etc/munge",
-                "fs_type": "nfs",
-                "mount_options": "defaults,hard,intr,_netdev",
-            }
-        )
 
     network_storage_iter: Iterable[Any] = filter(
         None,

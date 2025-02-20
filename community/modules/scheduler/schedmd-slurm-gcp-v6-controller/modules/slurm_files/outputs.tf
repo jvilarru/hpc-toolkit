@@ -34,6 +34,11 @@ output "config" {
   }
 
   precondition {
+    condition     = var.enable_hybrid ? can(coalesce(var.hybrid_conf.munge_snapshot)) : true
+    error_message = "Input munge_snapshot is required in hybrid mode."
+  }
+
+  precondition {
     condition     = length(local.x_nodeset_overlap) == 0
     error_message = "All nodeset names must be unique among all nodeset types."
   }
