@@ -365,6 +365,7 @@ variable "hybrid_conf" {
     slurm_uid               = optional(number)
     slurm_gid               = optional(number)
     munge_secret            = string
+    munge_disk              = string
   })
   default = null
 }

@@ -194,20 +194,66 @@ def mount_fstab(mounts, log):
 
 def hybrid_munge_setup():
     munge_key = Path(dirs.munge / "munge.key")
-    munge_secret = lookup().cfg.hybrid_conf.munge_secret
+    if not hybrid_munge_setup_disk(munge_key):
+        log.error("Problems accessing the munge key")
+        return
+    log.info("Restrict permissions of munge.key")
+    shutil.chown(munge_key, user="munge", group="munge")
+    os.chmod(munge_key, stat.S_IRUSR)
 
+def hybrid_munge_setup_disk(munge_key):
+    disk_dev = "/dev/disk/by-id/google-munge"
+    disk_part = disk_dev + "-part1"
+    disk_mount = Path("/mnt/munge")
+    if not os.path.exists(disk_part):
+        if not os.path.exists(disk_dev):
+            log.error("Cannot find the munge disk")
+        else:
+            log.error("The munge disk that is attached is not partitioned")
+        return False
+    else:
+        disk_mount.mkdir()
+        mounted = False
+        try:
+            mounted = run(f"mount {disk_part} {str(disk_mount)}", timeout=5).returncode == 0
+        except Exception as e:
+            log.error(f"munge mount failed: {e}")
+        if not mounted:
+            log.error("Cannot mount munge disk, ensure you have a valid partition type")
+            return False
+    munge_disk_file = Path(disk_mount / "munge.key")
+    if munge_disk_file.is_file():
+        try:
+            shutil.copy2(str(munge_disk_file),str(munge_key))
+        except Exception as e:
+            log.error("Cannot copy munge.key from munge_disk")
+            return False
+    else:
+        log.error("munge.key not present in munge_disk")
+        return False
+    mounted = True
+    try:
+        mounted = not (run(f"umount {str(disk_mount)}", timeout=5).returncode == 0)
+    except Exception as e:
+        log.error(f"munge_disk umount failed: {e}")
+        return False
+    if mounted:
+        log.error("Cannot umount munge_disk")
+        return False
+    disk_mount.rmdir()
+    return True
+
+def hybrid_munge_setup_secret(munge_key):
+    munge_secret = lookup().cfg.hybrid_conf.munge_secret
     log.info(f"Accessing munge secret {munge_secret}")
     payload = access_secret_version(lookup().cfg.project,munge_secret)
     if payload:
         decoded_secret = base64.b64decode(payload)
         with open(munge_key, "wb") as file:
             file.write(decoded_secret)
-
-        log.info("Restrict permissions of munge.key")
-        shutil.chown(munge_key, user="munge", group="munge")
-        os.chmod(munge_key, stat.S_IRUSR)
-    else:
-        log.error(f"Payload retrieved from munge secret {munge_secret} is not valid")
+        return True
+    log.error(f"Payload retrieved from munge secret {munge_secret} is not valid")
+    return False
 
 def munge_mount_handler():
     if lookup().is_controller:
