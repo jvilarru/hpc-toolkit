@@ -191,11 +191,62 @@ def mount_fstab(mounts, log):
             except Exception as e:
                 raise e
 
+def _hybrid_munge_setup_disk(munge_key):
+    disk_dev = "/dev/disk/by-id/google-munge"
+    disk_part = disk_dev + "-part1"
+    disk_mount = Path("/mnt/munge")
+    if not os.path.exists(disk_dev):
+        log.error("Cannot find the munge disk")
+        return False
+    if not os.path.exists(disk_part):
+        log.warning("The munge disk that is attached is not partitioned, assuming that is formatted without partitions.")
+        disk_part = disk_dev
+    disk_mount.mkdir()
+    mounted = False
+    try:
+        mounted = run(f"mount {disk_part} {str(disk_mount)}", timeout=5).returncode == 0
+    except Exception as e:
+        log.error(f"munge mount failed: {e}")
+    if not mounted:
+        log.error("Cannot mount munge disk, ensure you have a valid partition type")
+        return False
+    munge_disk_file = Path(disk_mount / "munge.key")
+    if munge_disk_file.is_file():
+        try:
+            shutil.copy2(str(munge_disk_file),str(munge_key))
+        except Exception as e:
+            log.error("Cannot copy munge.key from munge_disk")
+            return False
+    else:
+        log.error("munge.key not present in munge_disk")
+        return False
+    try:
+        mounted = not (run(f"umount {str(disk_mount)}", timeout=5).returncode == 0)
+    except Exception as e:
+        log.error(f"munge_disk umount failed: {e}")
+        return False
+    if mounted:
+        log.error("Cannot umount munge_disk")
+        return False
+    disk_mount.rmdir()
+    return True
+
+def _hybrid_munge_setup():
+    munge_key = Path(dirs.munge / "munge.key")
+    if not _hybrid_munge_setup_disk(munge_key):
+        log.error("Problems accessing the munge key")
+        return
+    log.info("Restrict permissions of munge.key")
+    shutil.chown(munge_key, user="munge", group="munge")
+    os.chmod(munge_key, stat.S_IRUSR)
 
 def munge_mount_handler():
+    if lookup().cfg.hybrid_conf:
+        _hybrid_munge_setup()
+        return
     if not lookup().cfg.munge_mount:
         log.error("Missing munge_mount in cfg")
-    elif lookup().is_controller:
+    if lookup().is_controller:
         return
 
     mount = lookup().cfg.munge_mount
