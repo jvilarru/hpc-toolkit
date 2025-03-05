@@ -14,6 +14,11 @@
 
 locals {
   output_dir = var.enable_hybrid ? try(abspath(coalesce(var.hybrid_conf.output_dir, ".")), abspath(".")) : null
+  munge_viewers = toset(flatten([
+    formatlist("serviceAccount:%s", [for x in local.compute_sa : x.email]),
+    formatlist("serviceAccount:%s", [for x in local.compute_tpu_sa : x.email if x.email != null]),
+    formatlist("serviceAccount:%s", [for x in local.login_sa : x.email]),
+  ]))
 }
 
 resource "local_file" "hybrid_install" {
@@ -44,4 +49,12 @@ echo "Success"
 EOF
   filename        = "${local.output_dir}/install_hybrid.sh"
   file_permission = "0750"
+}
+
+resource "google_secret_manager_secret_iam_binding" "munge_secret_accessor" {
+  count = var.enable_hybrid ? 1 : 0
+
+  secret_id = var.hybrid_conf.munge_secret
+  role      = "roles/secretmanager.secretAccessor"
+  members   = compact(local.munge_viewers)
 }
