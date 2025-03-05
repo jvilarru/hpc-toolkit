@@ -532,17 +532,29 @@ class DeffetiveStoredConfigError(Exception):
     """
     pass
 
-
 def _fill_cfg_defaults(cfg: NSDict) -> NSDict:
-    if not cfg.slurm_log_dir:
+    hybrid_conf = cfg.hybrid_conf
+    if not hybrid_conf:
         cfg.slurm_log_dir = dirs.log
-    if not cfg.slurm_bin_dir:
         cfg.slurm_bin_dir = slurmdirs.prefix / "bin"
-    if not cfg.slurm_control_host:
         cfg.slurm_control_host = f"{cfg.slurm_cluster_name}-controller"
-    if not cfg.slurm_control_host_port:
         cfg.slurm_control_host_port = "6820-6830"
-    if not cfg.munge_mount: # NOTE: should only happen with cloud controller
+
+    else:
+        #Required values
+        cfg.slurm_control_host = hybrid_conf.slurm_control_host
+        #Default by terraform
+        cfg.slurm_control_host_port = hybrid_conf.slurm_control_host_port
+        #Default by python
+        cfg.slurm_log_dir = hybrid_conf.slurm_log_dir if hybrid_conf.slurm_log_dir else dirs.log
+        cfg.slurm_bin_dir = hybrid_conf.slurm_bin_dir if hybrid_conf.slurm_bin_dir else slurmdirs.prefix / "bin"
+        #Optional values
+        if hybrid_conf.slurm_control_addr:
+            cfg.slurm_control_addr = hybrid_conf.slurm_control_addr
+        if hybrid_conf.google_app_cred_path:
+            cfg.google_app_cred_path = hybrid_conf.google_app_cred_path
+
+    if not cfg.munge_mount:
         cfg.munge_mount = NSDict(
             {
                 "server_ip": cfg.slurm_control_addr or cfg.slurm_control_host,
@@ -557,7 +569,7 @@ def _fill_cfg_defaults(cfg: NSDict) -> NSDict:
         (
             cfg.munge_mount,
             *cfg.network_storage,
-            *cfg.login_network_storage,
+            *(cfg.login_network_storage or [] ),
             *chain.from_iterable(ns.network_storage for ns in cfg.nodeset.values()),
             *chain.from_iterable(ns.network_storage for ns in cfg.nodeset_dyn.values()),
             *chain.from_iterable(ns.network_storage for ns in cfg.nodeset_tpu.values()),
@@ -1902,7 +1914,7 @@ class Lookup:
 
     @property
     def etc_dir(self) -> Path:
-        return Path(self.cfg.output_dir or slurmdirs.etc)
+        return Path(self.cfg.hybrid_conf.output_dir if self.cfg.hybrid_conf else slurmdirs.etc)
 
 _lkp: Optional[Lookup] = None
 

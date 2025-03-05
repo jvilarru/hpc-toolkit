@@ -14,7 +14,7 @@
 
 import pytest
 from mock import Mock
-from common import TstNodeset, TstCfg, TstMachineConf, TstTemplateInfo
+from common import TstNodeset, TstCfg, TstMachineConf, TstTemplateInfo, TstHybridConf
 
 import addict # type: ignore
 import conf
@@ -88,7 +88,7 @@ def test_dict_to_conf(value: dict, want: str):
     "cfg,want",
     [
         (TstCfg(
-            install_dir="ukulele",
+            hybrid_conf=TstHybridConf(install_dir = "ukulele"),
         ), 
          """LaunchParameters=enable_nss_slurm,use_interactive_step
 SlurmctldParameters=cloud_dns,enable_configless,idle_on_node_suspend
@@ -104,7 +104,7 @@ TreeWidth=128
 TopologyPlugin=topology/tree
 TopologyParam=SwitchAsNodeRank"""),
         (TstCfg(
-            install_dir="ukulele",
+            hybrid_conf=TstHybridConf(install_dir = "ukulele"),
             cloud_parameters={
                 "no_comma_params": True,
                 "private_data": None,
@@ -130,7 +130,7 @@ TreeWidth=128
 TopologyPlugin=topology/tree
 TopologyParam=SwitchAsNodeRank"""),
         (TstCfg(
-            install_dir="ukulele",
+            hybrid_conf=TstHybridConf(install_dir = "ukulele"),
             cloud_parameters={
                 "no_comma_params": True,
                 "private_data": [
