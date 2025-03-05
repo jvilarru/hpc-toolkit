@@ -62,7 +62,6 @@ locals {
     controller_startup_scripts_timeout = var.enable_hybrid ? null : var.controller_startup_scripts_timeout
     compute_startup_scripts_timeout    = var.compute_startup_scripts_timeout
     login_startup_scripts_timeout      = var.enable_hybrid ? null : var.login_startup_scripts_timeout
-    munge_mount                        = local.munge_mount
 
     # slurm conf
     prolog_scripts   = [for k, v in google_storage_bucket_object.prolog_scripts : k]
@@ -117,6 +116,7 @@ locals {
   hybrid_conf = {
     #Required params
     slurm_control_host = var.hybrid_conf != null ? var.hybrid_conf.slurm_control_host : null
+    munge_secret       = var.hybrid_conf != null ? var.hybrid_conf.munge_secret : null
     #Optional params
     output_dir  = local.output_dir
     install_dir = try(abspath(var.hybrid_conf.install_dir), local.output_dir)
@@ -130,12 +130,6 @@ locals {
     slurm_control_addr      = try(var.hybrid_conf.slurm_control_addr, null)
     google_app_cred_path    = try(abspath(var.hybrid_conf.google_app_cred_path), null)
   }
-  munge_mount = var.enable_hybrid ? {
-    server_ip     = lookup(var.munge_mount, "server_ip", coalesce(var.hybrid_conf.slurm_control_addr, var.hybrid_conf.slurm_control_host))
-    remote_mount  = lookup(var.munge_mount, "remote_mount", "/etc/munge/")
-    fs_type       = lookup(var.munge_mount, "fs_type", "nfs")
-    mount_options = lookup(var.munge_mount, "mount_options", "")
-  } : null
 
 }
 
